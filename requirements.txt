@@ -1,0 +1,8 @@
+drawsvg
+matplotlib
+networkx
+noise
+numpy
+pyqt5
+scipy
+shapely

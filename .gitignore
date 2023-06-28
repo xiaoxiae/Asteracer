@@ -1,0 +1,6 @@
+.idea/
+logo/
+**__pycache__/
+**venv/
+
+ignored/
