@@ -13,6 +13,7 @@ InstType = np.int8
 PosType = np.int32
 SpeedType = np.int32
 SizeType = np.uint32
+LongType = np.int64
 
 
 class TickFlag:
@@ -48,7 +49,7 @@ class Instruction:
         min_type_size = np.iinfo(InstType).min
         max_type_size = np.iinfo(InstType).max
 
-        if distance > max_type_size:
+        if distance_squared(vx, vy) > max_type_size:
             vx = np.clip((vx * max_type_size) // distance, min_type_size, max_type_size)
             vy = np.clip((vy * max_type_size) // distance, min_type_size, max_type_size)
 
@@ -97,8 +98,13 @@ class BoundingBox:
 
 def euclidean_distance(x1, y1, x2=0, y2=0) -> int:
     """Integer Euclidean distance between two points. Uses integer square root."""
-    return isqrt((int(x1) - int(x2)) ** 2 + (int(y1) - int(y2)) ** 2)
+    # TODO: isqrt may not work with 64bit numbers correctly
+    # TODO: provide custom and simple implementation of isqrt
+    return isqrt(((LongType)(x1) - (LongType)(x2)) ** 2 + ((LongType)(y1) - (LongType)(y2)) ** 2)
 
+def distance_squared(x1, y1, x2=0, y2=0) -> LongType:
+    """Integer squared distance between two points (exact)."""
+    return ((LongType)(x1) - (LongType)(x2)) ** 2 + ((LongType)(y1) - (LongType)(y2)) ** 2
 
 class Simulation:
     DRAG_FRACTION = (9, 10)  # slowdown of the racer's velocity after each tick
@@ -179,7 +185,7 @@ class Simulation:
             distance = euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y)
 
             # not colliding, nothing to be done
-            if distance > (self.racer.radius + obj.radius):
+            if distance_squared(self.racer.x, self.racer.y, obj.x, obj.y) > ((LongType)(self.racer.radius + obj.radius) ** 2):
                 return False
 
             # the vector to push the racer out by
@@ -223,7 +229,7 @@ class Simulation:
         new_goal_reached = False
 
         for i, goal in enumerate(self.goals):
-            if euclidean_distance(self.racer.x, self.racer.y, goal.x, goal.y) < self.racer.radius + goal.radius:
+            if distance_squared(self.racer.x, self.racer.y, goal.x, goal.y) <= ((LongType)(self.racer.radius + goal.radius) ** 2):
                 if not self.reached_goals[i]:
                     new_goal_reached = True
 
