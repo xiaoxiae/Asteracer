@@ -44,12 +44,11 @@ Goal = Asteroid
 class Instruction:
     def __init__(self, vx: Union[int, float] = 0, vy: Union[int, float] = 0):
         """Whatever values we get, normalize them."""
-        distance = euclidean_distance(vx, vy)
-
         min_type_size = np.iinfo(InstType).min
         max_type_size = np.iinfo(InstType).max
 
         if distance_squared(vx, vy) > max_type_size:
+            distance = euclidean_distance(vx, vy)
             vx = np.clip((vx * max_type_size) // distance, min_type_size, max_type_size)
             vy = np.clip((vy * max_type_size) // distance, min_type_size, max_type_size)
 
@@ -182,8 +181,6 @@ class Simulation:
         his velocity accordingly (based on the angle of collision). Returns True if the
         racer was pushed out, otherwise returns False."""
         if isinstance(obj, Asteroid):
-            distance = euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y)
-
             # not colliding, nothing to be done
             if distance_squared(self.racer.x, self.racer.y, obj.x, obj.y) > ((LongType)(self.racer.radius + obj.radius) ** 2):
                 return False
@@ -193,6 +190,7 @@ class Simulation:
             ny = self.racer.y - obj.y
 
             # how much to push by
+            distance = euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y)
             push_by = distance - (self.racer.radius + obj.radius)
 
             # the actual push
