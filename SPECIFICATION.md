@@ -82,7 +82,7 @@ Iterate over all asteroids `asteroid` in the order they were added to the simula
 - penalize by slowing racer down by 50%: `racer.velocity //= 2`
 
 #### Bounding box
-For each side of the box, if we're colliding, push the racer out and slow down by 50%.
+For each side of the box, if we're colliding (eg. if `racer.x - racer.radius < box.min_x` for the left side), push the racer out and slow down by 50%.
 
 ### 3) Checking goals
 Iterate over all goals `goal`, marking them reached if `eucliean_distance(racer, goal) < racer.radius + goal.radius` (i.e. if we're intersecting it).
