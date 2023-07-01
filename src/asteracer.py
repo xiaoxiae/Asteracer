@@ -244,6 +244,7 @@ class Simulation:
             for asteroid in self._grid[self._coordinate_to_grid(self.racer.x, self.racer.y)]:
                 if self._push_out(asteroid):
                     collided_this_iteration = collided = True
+                    break
 
             if self.bounding_box is not None and self._push_out(self.bounding_box):
                 collided_this_iteration = collided = True
