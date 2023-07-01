@@ -102,6 +102,7 @@ def euclidean_distance(x1, y1, x2=0, y2=0) -> int:
 
 class Simulation:
     DRAG_FRACTION = (9, 10)  # slowdown of the racer's velocity after each tick
+    COLLISION_FRACTION = (1, 2)  # slowdown of the racer's velocity after a tick where a collision occured
     MAX_COLLISION_RESOLUTIONS = 5  # at most how many collision iterations to perform
 
     def __init__(
@@ -192,10 +193,6 @@ class Simulation:
             self.racer.x -= (nx * push_by) // distance
             self.racer.y -= (ny * push_by) // distance
 
-            # penalize for collision by slowing the racer down
-            self.racer.vx //= 2
-            self.racer.vy //= 2
-
             return True
 
         elif isinstance(obj, BoundingBox):
@@ -214,10 +211,6 @@ class Simulation:
             if self.racer.y + self.racer.radius > obj.max_y:
                 self.racer.y = obj.max_y - self.racer.radius
                 collided = True
-
-            if collided:
-                self.racer.vx //= 2
-                self.racer.vy //= 2
 
             return collided
 
@@ -253,6 +246,10 @@ class Simulation:
 
             if not collided_this_iteration:
                 break
+
+        if collided:
+            self.racer.vx = self.racer.vx * self.COLLISION_FRACTION[0] // self.COLLISION_FRACTION[1]
+            self.racer.vy = self.racer.vy * self.COLLISION_FRACTION[0] // self.COLLISION_FRACTION[1]
 
         return collided
 
