@@ -13,31 +13,31 @@ These are then used to define the following objects which we use throughout the 
 
 ```python3
 class Racer:
-    x:  PosType = 0
-    y:  PosType = 0
-    vx: SpeedType = 0
-    vy: SpeedType = 0
-    radius: SizeType = 1
+    x:  PosType
+    y:  PosType
+    vx: SpeedType
+    vy: SpeedType
+    radius: SizeType
 ```
 
 ```python3
 class Asteroid:
-    x: PosType = 0
-    y: PosType = 0
-    radius: SizeType = 1
+    x: PosType
+    y: PosType
+    radius: SizeType
 ```
 
 ```python3
 class Goal:
-    x: PosType = 0
-    y: PosType = 0
-    radius: SizeType = 1
+    x: PosType
+    y: PosType
+    radius: SizeType
 ```
 
 ```python3
 class Instruction:
-    vx: InstType = 0
-    vy: InstType = 0
+    vx: InstType
+    vy: InstType
 ```
 
 ```python3
@@ -67,29 +67,31 @@ Given an instruction `(vx, vy)`, the racer is moved via the following rules:
 - add the instruction to the racer's velocity: `racer.velocity += (vx, vy)`
 - move the racer using its velocity: `racer.position += racer.velocity`
 
-An instruction is valid only if the squared length of the instruction is no greater than the square of the maximal positive value of the instruction type:
-`valid = vx*vx + vy*vy <= 127**2`
+An instruction is valid only if the length of the instruction (integer euclidean distance) is no greater than the maximal positive value of the instruction type.
 
 ### 2) Resolving collisions
 
-Collisions are resolved in `1` to `5` subticks. A subtick check collisions first with asteroids, then with the world bounding box.
+Collisions are resolved in `1` to `5` subticks.
+A subtick check collisions first with all asteroids, then with the bounding box.
 If any collision occurs during a subtick, execute another subtick, until the subtick limit is reached.
 
-If any collision occurs in the tick as a whole, reduce the racer's velocity to half. This slowdown must occur at most once per tick, no matter how many collisions happened, as long as any collision happened.
+If any collision occurs in the tick as a whole, reduce the racer's velocity to half.
+This slowdown must occur at most once per tick, no matter how many collisions happened.
 
 #### Asteroids
 Iterate over all asteroids `asteroid` in the order they were added to the simulation and for each:
-- if `distance_squared(asteroid, racer) > (asteroid.radius + racer.radius)^2`, we're not colliding (continue to the next asteroid)
-- execute the following only upon collision
-- let `distance = eucliean_distance(asteroid, racer)` (make sure to use _integer square root_)
-- get the vector to push the racer out by: `vn = racer.position - asteroid.position`
-- get how much to push by: `push_by = distance - (asteroid.radius + racer.radius)`
-- perform the push: `racer.position -= (push_by * vn) / distance`
-- **break** the asteroid iteration loop - we only allow one asteroid collision per subtick
+- if `distance_squared(asteroid, racer) > (asteroid.radius + racer.radius) ** 2`, we're not colliding (continue to the next asteroid)
+- execute the following only upon collision:
+    - let `distance = euclidean_distance(asteroid, racer)` (make sure to use _integer square root_)
+    - get the vector to push the racer out by: `vn = racer.position - asteroid.position`
+    - get how much to push by: `push_by = distance - (asteroid.radius + racer.radius)`
+    - perform the push: `racer.position -= (push_by * vn) / distance`
+    - **break** the asteroid iteration loop (we only allow one asteroid collision per subtick)
 
 #### Bounding box
 For each side of the box, if we're colliding (eg. if `racer.x - racer.radius < box.min_x` for the left side), push the racer out to the bounding box edge.
+
 Note that bounding box collisions can occur during a subtick independent of whether an asteroid collision occured.
 
 ### 3) Checking goals
-Iterate over all goals `goal`, marking them reached if `distance_squared(racer, goal) < (racer.radius + goal.radius)**2` (i.e. if we're intersecting it).
+Iterate over all goals `goal`, marking them reached if `distance_squared(racer, goal) < (racer.radius + goal.radius) ** 2` (i.e. if we're intersecting it).
