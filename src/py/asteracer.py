@@ -94,10 +94,15 @@ class BoundingBox:
         return SizeType(self.max_y - self.min_y)
 
 
-def euclidean_distance(x1, y1, x2=0, y2=0) -> int:
+def distance_squared(x1, y1, x2=0, y2=0):
+    """Squared Euclidean distance between two points."""
+    return (x1 - x2) ** 2 + (y1 - y2) ** 2
+
+
+def euclidean_distance(x1, y1, x2=0, y2=0):
     """Integer Euclidean distance between two points. Uses integer square root."""
     # TODO: provide custom and simple implementation of isqrt
-    return isqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return isqrt(distance_squared(x1, y1, x2, y2))
 
 
 class Simulation:
@@ -177,7 +182,7 @@ class Simulation:
         racer was pushed out, otherwise returns False."""
         if isinstance(obj, Asteroid):
             # not colliding, nothing to be done
-            if euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y) > self.racer.radius + obj.radius:
+            if distance_squared(self.racer.x, self.racer.y, obj.x, obj.y) > (self.racer.radius + obj.radius) ** 2:
                 return False
 
             # the vector to push the racer out by
@@ -222,7 +227,7 @@ class Simulation:
         new_goal_reached = False
 
         for i, goal in enumerate(self.goals):
-            if euclidean_distance(self.racer.x, self.racer.y, goal.x, goal.y) <= self.racer.radius + goal.radius:
+            if distance_squared(self.racer.x, self.racer.y, goal.x, goal.y) <= (self.racer.radius + goal.radius) ** 2:
                 if not self.reached_goals[i]:
                     new_goal_reached = True
 
