@@ -1,7 +1,7 @@
 """A sample solution to the test map using Asteracer's default implementation."""
 from asteracer import *
 
-simulation = Simulation.load(f"../maps/test.txt")
+simulation = Simulation.load(f"../../maps/test.txt")
 
 print(f"Starting racer position: {simulation.racer.x} {simulation.racer.y}")
 print(f"Number of asteroids: {len(simulation.asteroids)}")

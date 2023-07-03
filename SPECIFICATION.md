@@ -5,9 +5,9 @@ The following document contains a specification of the Asteracer simulation, sho
 To make sure Asteracer runs in the same way in different languages, **all computations are done strictly using integer datatypes,** which are the following:
 
 - instruction values `InstType: int8`
-- position values `PosType: int32`
-- speed values `SpeedType: int32`
-- size values `SizeType: uint32`
+- position values `PosType: int64`
+- speed values `SpeedType: int64`
+- size values `SizeType: int64`
 
 These are then used to define the following objects which we use throughout the simulation:
 

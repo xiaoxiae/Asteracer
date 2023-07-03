@@ -167,6 +167,6 @@ if __name__ == "__main__":
     for simulation_type in SimulationType:
         print(f"Generating {simulation_type.name.lower()}... ", end="", flush=True)
         simulation = generate_simulation(simulation_type)
-        simulation.save(f"../maps/{simulation_type.name.lower()}.txt")
-        get_preview(simulation).save_svg(f"../maps/{simulation_type.name.lower()}.svg")
+        simulation.save(f"../../maps/{simulation_type.name.lower()}.txt")
+        get_preview(simulation).save_svg(f"../../maps/{simulation_type.name.lower()}.svg")
         print("done.", flush=True)

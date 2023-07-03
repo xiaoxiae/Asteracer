@@ -280,14 +280,14 @@ if __name__ == "__main__":
 
     # generate all graphs
     for simulation_type in SimulationType:
-        simulation = Simulation.load(f"../maps/{simulation_type.name.lower()}.txt")
+        simulation = Simulation.load(f"../../maps/{simulation_type.name.lower()}.txt")
         task = simulation_type.name.lower()
 
         print(f"Generating {task} graph... ", end="", flush=True)
         vertices, edges, asteroid_vertices, goal_vertices = get_asteroid_graph(simulation)
         print("saving... ", end="", flush=True)
-        save_asteroid_graph(f"../graphs/{task}.txt", vertices, edges, asteroid_vertices, goal_vertices)
+        save_asteroid_graph(f"../../graphs/{task}.txt", vertices, edges, asteroid_vertices, goal_vertices)
         print("generating preview... ", end="", flush=True)
         d = get_graph_preview(simulation, vertices, edges)
-        d.save_svg(f"../graphs/{task}.svg")
+        d.save_svg(f"../../graphs/{task}.svg")
         print("done.", flush=True)

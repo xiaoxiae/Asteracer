@@ -10,10 +10,9 @@ from typing import List, Union, Tuple, Dict
 import numpy as np
 
 InstType = np.int8
-PosType = np.int32
-SpeedType = np.int32
-SizeType = np.uint32
-LongType = np.int64
+PosType = np.int64
+SpeedType = np.int64
+SizeType = np.int64
 
 
 class TickFlag:
@@ -46,9 +45,9 @@ class Instruction:
         """Whatever values we get, normalize them."""
         min_type_size = np.iinfo(InstType).min
         max_type_size = np.iinfo(InstType).max
+        distance = euclidean_distance(vx, vy)
 
-        if distance_squared(vx, vy) > max_type_size:
-            distance = euclidean_distance(vx, vy)
+        if distance > max_type_size:
             vx = np.clip((vx * max_type_size) // distance, min_type_size, max_type_size)
             vy = np.clip((vy * max_type_size) // distance, min_type_size, max_type_size)
 
@@ -97,17 +96,13 @@ class BoundingBox:
 
 def euclidean_distance(x1, y1, x2=0, y2=0) -> int:
     """Integer Euclidean distance between two points. Uses integer square root."""
-    # TODO: isqrt may not work with 64bit numbers correctly
     # TODO: provide custom and simple implementation of isqrt
-    return isqrt(((LongType)(x1) - (LongType)(x2)) ** 2 + ((LongType)(y1) - (LongType)(y2)) ** 2)
+    return isqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-def distance_squared(x1, y1, x2=0, y2=0) -> LongType:
-    """Integer squared distance between two points (exact)."""
-    return ((LongType)(x1) - (LongType)(x2)) ** 2 + ((LongType)(y1) - (LongType)(y2)) ** 2
 
 class Simulation:
     DRAG_FRACTION = (9, 10)  # slowdown of the racer's velocity after each tick
-    COLLISION_FRACTION = (1, 2)  # slowdown of the racer's velocity after a tick where a collision occured
+    COLLISION_FRACTION = (1, 2)  # slowdown of the racer's velocity after a tick where a collision occurred
     MAX_COLLISION_RESOLUTIONS = 5  # at most how many collision iterations to perform
 
     def __init__(
@@ -182,7 +177,7 @@ class Simulation:
         racer was pushed out, otherwise returns False."""
         if isinstance(obj, Asteroid):
             # not colliding, nothing to be done
-            if distance_squared(self.racer.x, self.racer.y, obj.x, obj.y) > ((LongType)(self.racer.radius + obj.radius) ** 2):
+            if euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y) > self.racer.radius + obj.radius:
                 return False
 
             # the vector to push the racer out by
@@ -227,7 +222,7 @@ class Simulation:
         new_goal_reached = False
 
         for i, goal in enumerate(self.goals):
-            if distance_squared(self.racer.x, self.racer.y, goal.x, goal.y) <= ((LongType)(self.racer.radius + goal.radius) ** 2):
+            if euclidean_distance(self.racer.x, self.racer.y, goal.x, goal.y) <= self.racer.radius + goal.radius:
                 if not self.reached_goals[i]:
                     new_goal_reached = True
 
