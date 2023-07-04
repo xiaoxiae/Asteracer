@@ -8,17 +8,17 @@ Compete for the fastest time to collect all checkpoints while avoiding the aster
 ## Getting started
 To play Asteracer interactively, you can do so [on this website](TODO) (TODO).
 
-For starting out with writing solves, see `src/example.py`.
+For starting out with writing solves, see `src/pyasteracer/example.py`.
 
 ## Contents
 - `src/` – source code of Asteracer's implementations
-  - `py/` – Python implementation
-    - `asteracer.py` – the implementation
-    - `example.py` – simple solution for the test map
+  - `pyasteracer/` – Python implementation (as a module)
+    - `__init__.py` – the implementation
+    - `__main__.py` – a PyQt5 visualizer (_under construction_)
+    - `example.py` – a simple solution for the test map
+    - `generator.py` – map generator
     - `solver.py` – useful utilities for solving Asteracer
     - `test.py` – scripts for testing against this implementation
-    - `__main__.py` – a PyQt5 visualizer (_under construction_)
-    - `generator.py` – Asteracer's map generator
   - `cpp/` – C++ implementation (used in Webassembly)
     - `sim.cpp` – the implementation
 - `maps/` – official maps (in `txt` and `svg` form)

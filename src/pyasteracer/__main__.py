@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPainter, QBrush, QPen, QRegion, QKeySequence
 from PyQt5.QtWidgets import QAction, QSpinBox, QMenuBar, QMainWindow, QApplication, QPushButton, QFrame, QLineEdit, \
     QMenu, QFileDialog
 
-from asteracer import *
+from pyasteracer import *
 
 
 class Asteracer(QMainWindow):

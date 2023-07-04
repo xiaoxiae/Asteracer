@@ -5,8 +5,8 @@ from typing import Iterator
 import drawsvg as draw
 import shapely
 
-from asteracer import *
-from generator import RACER_R, ASTEROID_R, get_preview, SimulationType
+from pyasteracer import *
+from pyasteracer.generator import RACER_R, ASTEROID_R, get_preview, SimulationType
 
 Point = Tuple[float, float]
 Vertex = Tuple[int, int]

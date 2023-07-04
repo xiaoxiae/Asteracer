@@ -1,7 +1,7 @@
 """A script for testing Asteracer (mostly against different implementations)."""
 import argparse
 
-from asteracer import *
+from pyasteracer import *
 
 
 def print_states(simulation: Simulation, instructions: List[Instruction]):

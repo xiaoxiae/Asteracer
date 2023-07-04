@@ -134,12 +134,12 @@ class Simulation:
             min_x, min_y = self._coordinate_to_grid(
                 asteroid.x - asteroid.radius - racer.radius,
                 asteroid.y - asteroid.radius - racer.radius,
-            )
+                )
 
             max_x, max_y = self._coordinate_to_grid(
                 asteroid.x + asteroid.radius + racer.radius,
                 asteroid.y + asteroid.radius + racer.radius,
-            )
+                )
 
             for grid_x in range(min_x, max_x + 1):
                 for grid_y in range(min_y, max_y + 1):

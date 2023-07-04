@@ -1,5 +1,5 @@
 """A sample solution to the test map using Asteracer's default implementation."""
-from asteracer import *
+from pyasteracer import *
 
 simulation = Simulation.load(f"../../maps/test.txt")
 

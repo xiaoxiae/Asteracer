@@ -6,7 +6,7 @@ from random import seed, randint
 import drawsvg as draw
 from noise import snoise2
 
-from asteracer import *
+from pyasteracer import *
 
 ASTEROID_R = 30000
 RACER_R = 1000
