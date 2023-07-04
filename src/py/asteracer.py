@@ -45,9 +45,9 @@ class Instruction:
         """Whatever values we get, normalize them."""
         min_type_size = np.iinfo(InstType).min
         max_type_size = np.iinfo(InstType).max
-        distance = euclidean_distance(vx, vy)
 
-        if distance > max_type_size:
+        if distance_squared(vx, vy) > max_type_size ** 2:
+            distance = euclidean_distance(vx, vy)
             vx = np.clip((vx * max_type_size) // distance, min_type_size, max_type_size)
             vy = np.clip((vy * max_type_size) // distance, min_type_size, max_type_size)
 
