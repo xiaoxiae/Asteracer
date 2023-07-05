@@ -67,7 +67,7 @@ Given an instruction `(vx, vy)`, the racer is moved via the following rules:
 - add the instruction to the racer's velocity: `racer.velocity += (vx, vy)`
 - move the racer using its velocity: `racer.position += racer.velocity`
 
-An instruction is valid only if the squared euclidean length of the instruction is no greater than the square of the maximal positive value of the instruction type (i.e. `distance_squared(vx, vy) > max_type_size ** 2`).
+An instruction is valid only if the length of the instruction is no greater than the maximal allowed acceleration (currently `127`). Note that the instruction length check must be done by comparing the squares of the instruction length and the maximal acceleration (i.e. `distance_squared(vx, vy) > 127 ** 2`), as this can be done exactly, unlike comparing euclidean length computed with `isqrt`.
 
 ### 2) Resolving collisions
 

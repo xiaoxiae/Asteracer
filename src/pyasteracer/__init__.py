@@ -41,15 +41,15 @@ Goal = Asteroid
 
 
 class Instruction:
+    MAX_ACCELERATION = 127
+
     def __init__(self, vx: Union[int, float] = 0, vy: Union[int, float] = 0):
         """Whatever values we get, normalize them."""
-        min_type_size = np.iinfo(InstType).min
-        max_type_size = np.iinfo(InstType).max
-
-        if distance_squared(vx, vy) > max_type_size ** 2:
+        
+        if distance_squared(vx, vy) > Instruction.MAX_ACCELERATION ** 2:
             distance = euclidean_distance(vx, vy)
-            vx = np.clip((vx * max_type_size) // distance, min_type_size, max_type_size)
-            vy = np.clip((vy * max_type_size) // distance, min_type_size, max_type_size)
+            vx = np.clip((vx * Instruction.MAX_ACCELERATION) // distance, -Instruction.MAX_ACCELERATION, Instruction.MAX_ACCELERATION)
+            vy = np.clip((vy * Instruction.MAX_ACCELERATION) // distance, -Instruction.MAX_ACCELERATION, Instruction.MAX_ACCELERATION)
 
         self.vx = InstType(vx)
         self.vy = InstType(vy)
