@@ -94,15 +94,15 @@ class BoundingBox:
         return SizeType(self.max_y - self.min_y)
 
 
-def distance_squared(x1, y1, x2=0, y2=0):
+def distance_squared(x1, y1, x2=0, y2=0) -> PosType:
     """Squared Euclidean distance between two points."""
-    return (x1 - x2) ** 2 + (y1 - y2) ** 2
+    return PosType((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
 def euclidean_distance(x1, y1, x2=0, y2=0):
     """Integer Euclidean distance between two points. Uses integer square root."""
     # TODO: provide custom and simple implementation of isqrt
-    return isqrt(distance_squared(x1, y1, x2, y2))
+    return PosType(isqrt(distance_squared(x1, y1, x2, y2)))
 
 
 class Simulation:
