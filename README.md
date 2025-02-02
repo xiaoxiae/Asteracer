@@ -21,6 +21,7 @@ For starting out with writing solves, see `src/pyasteracer/example.py`.
     - `test.py` – scripts for testing against this implementation
   - `cpp/` – C++ implementation (used in Webassembly)
     - `sim.cpp` – the implementation
+- `test/` – test data (maps, instructions and simulation states)
 - `maps/` – official maps (in `txt` and `svg` form)
 - `graphs/` – graphs of maps for use in solving Asteracer
 
