@@ -24,7 +24,7 @@ static DRAG_FRACTION: (SpeedType, SpeedType) = (9, 10);
 static COLLISION_FRACTION: (SpeedType, SpeedType) = (1, 2);
 static MAX_COLLISION_RESOLUTIONS: usize = 5;
 
-static GRID_RESOLUTION: usize = 10;
+static CELL_SIZE: PosType = 10_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Racer {
@@ -131,25 +131,18 @@ struct Simulation {
 
     asteroids: Vec<Asteroid>,
     goals: Vec<Goal>,
-    bbox: Option<BoundingBox>,
+    bbox: BoundingBox,
 
     reached_goals: Vec<bool>,
     pushed_states: Vec<(Racer, Vec<bool>)>,
 
     _grid: HashMap<(PosType, PosType), Vec<Asteroid>>,
-    _grid_size: PosType,
+    _cell_size: PosType,
 }
 
 impl Simulation {
-    fn new(
-        racer: Racer,
-        asteroids: Vec<Asteroid>,
-        goals: Vec<Goal>,
-        bbox: Option<BoundingBox>,
-    ) -> Self {
+    fn new(racer: Racer, asteroids: Vec<Asteroid>, goals: Vec<Goal>, bbox: BoundingBox) -> Self {
         let reached_goals = vec![false; goals.len()];
-
-        let grid_size = (asteroids.len() / GRID_RESOLUTION) as PosType;
 
         let mut simulation = Self {
             initial_racer: racer,
@@ -160,7 +153,7 @@ impl Simulation {
             reached_goals,
             pushed_states: Vec::new(),
             _grid: HashMap::new(),
-            _grid_size: grid_size,
+            _cell_size: CELL_SIZE,
         };
 
         for &asteroid in &simulation.asteroids {
@@ -189,13 +182,7 @@ impl Simulation {
     }
 
     fn _coordinate_to_grid(&self, x: PosType, y: PosType) -> (PosType, PosType) {
-        match &self.bbox {
-            None => (0, 0),
-            Some(bbox) => (
-                (x - bbox.min_x) / bbox.width() * self._grid_size,
-                (y - bbox.min_y) / bbox.height() * self._grid_size,
-            ),
-        }
+        (x / self._cell_size, y / self._cell_size)
     }
 
     fn _move_racer(&mut self, instruction: Instruction) {
@@ -210,60 +197,59 @@ impl Simulation {
     }
 
     fn _push_from_asteroids(&mut self) -> bool {
-        for asteroid in self
-            ._grid
-            .get(&self._coordinate_to_grid(self.racer.x, self.racer.y))
-            .unwrap()
-        {
-            // not colliding, nothing to be done
-            if euclidean_distance(self.racer.x, self.racer.y, asteroid.x, asteroid.y)
-                > self.racer.radius + asteroid.radius
-            {
-                continue;
+        let grid_coordinate = self._coordinate_to_grid(self.racer.x, self.racer.y);
+
+        match self._grid.get(&grid_coordinate) {
+            None => false,
+            Some(asteroids) => {
+                for asteroid in asteroids {
+                    // not colliding, nothing to be done
+                    if euclidean_distance(self.racer.x, self.racer.y, asteroid.x, asteroid.y)
+                        > self.racer.radius + asteroid.radius
+                    {
+                        continue;
+                    }
+
+                    // the vector to push the racer out by
+                    let nx = self.racer.x - asteroid.x;
+                    let ny = self.racer.y - asteroid.y;
+
+                    // how much to push by
+                    let distance =
+                        euclidean_distance(self.racer.x, self.racer.y, asteroid.x, asteroid.y);
+                    let push_by = distance - (self.racer.radius + asteroid.radius);
+
+                    // the actual push
+                    self.racer.x -= (nx * push_by) / distance;
+                    self.racer.y -= (ny * push_by) / distance;
+
+                    return true;
+                }
+
+                false
             }
-
-            // the vector to push the racer out by
-            let nx = self.racer.x - asteroid.x;
-            let ny = self.racer.y - asteroid.y;
-
-            // how much to push by
-            let distance = euclidean_distance(self.racer.x, self.racer.y, asteroid.x, asteroid.y);
-            let push_by = distance - (self.racer.radius + asteroid.radius);
-
-            // the actual push
-            self.racer.x -= (nx * push_by) / distance;
-            self.racer.y -= (ny * push_by) / distance;
-
-            return true;
         }
-
-        false
     }
 
     fn _push_from_bounding_box(&mut self) -> bool {
         // not pretty but easy to read :)
         let mut collided = false;
 
-        match &self.bbox {
-            None => return false,
-            Some(bbox) => {
-                if self.racer.x - self.racer.radius < bbox.min_x {
-                    self.racer.x = bbox.min_x + self.racer.radius;
-                    collided = true;
-                }
-                if self.racer.x + self.racer.radius > bbox.max_x {
-                    self.racer.x = bbox.max_x - self.racer.radius;
-                    collided = true;
-                }
-                if self.racer.y - self.racer.radius < bbox.min_y {
-                    self.racer.y = bbox.min_y + self.racer.radius;
-                    collided = true;
-                }
-                if self.racer.y + self.racer.radius > bbox.max_y {
-                    self.racer.y = bbox.max_y - self.racer.radius;
-                    collided = true;
-                }
-            }
+        if self.racer.x - self.racer.radius < self.bbox.min_x {
+            self.racer.x = self.bbox.min_x + self.racer.radius;
+            collided = true;
+        }
+        if self.racer.x + self.racer.radius > self.bbox.max_x {
+            self.racer.x = self.bbox.max_x - self.racer.radius;
+            collided = true;
+        }
+        if self.racer.y - self.racer.radius < self.bbox.min_y {
+            self.racer.y = self.bbox.min_y + self.racer.radius;
+            collided = true;
+        }
+        if self.racer.y + self.racer.radius > self.bbox.max_y {
+            self.racer.y = self.bbox.max_y - self.racer.radius;
+            collided = true;
         }
 
         collided
@@ -418,7 +404,7 @@ impl Simulation {
             });
         }
 
-        Self::new(racer, asteroids, goals, Option::from(bbox))
+        Self::new(racer, asteroids, goals, bbox)
     }
 }
 

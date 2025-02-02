@@ -38,7 +38,6 @@ class Asteroid:
     y: PosType = 0
     radius: SizeType = 1
 
-
 Goal = Asteroid
 
 
@@ -128,7 +127,7 @@ class Simulation:
     COLLISION_FRACTION = (1, 2)  # slowdown of the racer's velocity after a tick where a collision occurred
     MAX_COLLISION_RESOLUTIONS = 5  # at most how many collision iterations to perform
 
-    GRID_RESOLUTION = 10
+    CELL_SIZE = 10_000
 
     def __init__(
             self,
@@ -147,7 +146,6 @@ class Simulation:
 
         # to speed up the computation, we divide the bounding box (if we have one) into a grid
         # we do this so we don't need to check all asteroids at each tick, only those that could collide with the racer
-        self._grid_size = len(self.asteroids) // self.GRID_RESOLUTION or 1
         self._grid: Dict[Tuple[int, int], List[Asteroid]] = defaultdict(list)
 
         for asteroid in asteroids:
@@ -172,13 +170,7 @@ class Simulation:
 
     def _coordinate_to_grid(self, x: float, y: float) -> Tuple[int, int]:
         """Translate an (x,y) coordinate into a coordinate of the grid."""
-        if self.bounding_box is None:
-            return 0, 0
-
-        return (
-            int((x - self.bounding_box.min_x) / self.bounding_box.width() * self._grid_size),
-            int((y - self.bounding_box.min_y) / self.bounding_box.height() * self._grid_size),
-        )
+        return (x // self.CELL_SIZE, y // self.CELL_SIZE)
 
     def _move_racer(self, instruction: Instruction):
         """Move the racer in the given direction."""
