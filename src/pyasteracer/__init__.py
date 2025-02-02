@@ -1,7 +1,9 @@
-"""The Asteracer game implementation. Includes the base movement code + couple of QOL additions (eg. save states)."""
+"""
+The Asteracer game implementation. Includes the base movement code + couple of QOL additions (eg. save states)."""
 from __future__ import annotations
 
 import dataclasses
+import random
 from collections import defaultdict
 from dataclasses import dataclass
 from math import isqrt
@@ -45,11 +47,20 @@ class Instruction:
 
     def __init__(self, vx: Union[int, float] = 0, vy: Union[int, float] = 0):
         """Whatever values we get, normalize them."""
-        
+
         if distance_squared(vx, vy) > Instruction.MAX_ACCELERATION ** 2:
-            distance = euclidean_distance(vx, vy)
-            vx = np.clip((vx * Instruction.MAX_ACCELERATION) // distance, -Instruction.MAX_ACCELERATION, Instruction.MAX_ACCELERATION)
-            vy = np.clip((vy * Instruction.MAX_ACCELERATION) // distance, -Instruction.MAX_ACCELERATION, Instruction.MAX_ACCELERATION)
+            # use float to properly normalize here
+            distance = (vx ** 2 + vy ** 2) ** (1/2)
+
+            vx = int(vx / distance * Instruction.MAX_ACCELERATION)
+            vy = int(vy / distance * Instruction.MAX_ACCELERATION)
+
+            # if we're still over, decrement both values
+            if distance_squared(vx, vy) > Instruction.MAX_ACCELERATION ** 2:
+                vx -= signum(vx)
+                vy -= signum(vy)
+
+        assert distance_squared(vx, vy) <= Instruction.MAX_ACCELERATION ** 2
 
         self.vx = InstType(vx)
         self.vy = InstType(vy)
@@ -64,20 +75,17 @@ class Instruction:
         return f"Instruction({self.vx}, {self.vy})"
 
     @classmethod
-    def up(cls):
-        return cls(0, np.iinfo(InstType).min)
-
-    @classmethod
-    def down(cls):
-        return cls(0, np.iinfo(InstType).max)
-
-    @classmethod
-    def left(cls):
-        return cls(np.iinfo(InstType).min, 0)
-
-    @classmethod
-    def right(cls):
-        return cls(np.iinfo(InstType).max, 0)
+    def random(cls):
+        return cls(
+            random.randint(
+                -cls.MAX_ACCELERATION,
+                cls.MAX_ACCELERATION
+            ),
+            random.randint(
+                -cls.MAX_ACCELERATION,
+                cls.MAX_ACCELERATION
+            ),
+        )
 
 
 @dataclass
@@ -105,10 +113,22 @@ def euclidean_distance(x1, y1, x2=0, y2=0):
     return PosType(isqrt(distance_squared(x1, y1, x2, y2)))
 
 
+def signum(x):
+    return -1 if x < 0 else 0 if x == 0 else 1
+
+
+def division(a, b):
+    """Correctly implemented division, removing the fractional component."""
+    return (abs(a) // b) * signum(a)
+
+
+
 class Simulation:
     DRAG_FRACTION = (9, 10)  # slowdown of the racer's velocity after each tick
     COLLISION_FRACTION = (1, 2)  # slowdown of the racer's velocity after a tick where a collision occurred
     MAX_COLLISION_RESOLUTIONS = 5  # at most how many collision iterations to perform
+
+    GRID_RESOLUTION = 10
 
     def __init__(
             self,
@@ -127,19 +147,19 @@ class Simulation:
 
         # to speed up the computation, we divide the bounding box (if we have one) into a grid
         # we do this so we don't need to check all asteroids at each tick, only those that could collide with the racer
-        self._grid_size = len(self.asteroids) // 10 or 1
+        self._grid_size = len(self.asteroids) // self.GRID_RESOLUTION or 1
         self._grid: Dict[Tuple[int, int], List[Asteroid]] = defaultdict(list)
 
         for asteroid in asteroids:
             min_x, min_y = self._coordinate_to_grid(
                 asteroid.x - asteroid.radius - racer.radius,
                 asteroid.y - asteroid.radius - racer.radius,
-                )
+            )
 
             max_x, max_y = self._coordinate_to_grid(
                 asteroid.x + asteroid.radius + racer.radius,
                 asteroid.y + asteroid.radius + racer.radius,
-                )
+            )
 
             for grid_x in range(min_x, max_x + 1):
                 for grid_y in range(min_y, max_y + 1):
@@ -165,8 +185,8 @@ class Simulation:
         vx, vy = instruction.vx, instruction.vy
 
         # drag
-        self.racer.vx = self.racer.vx * self.DRAG_FRACTION[0] // self.DRAG_FRACTION[1]
-        self.racer.vy = self.racer.vy * self.DRAG_FRACTION[0] // self.DRAG_FRACTION[1]
+        self.racer.vx = division(self.racer.vx * self.DRAG_FRACTION[0], self.DRAG_FRACTION[1])
+        self.racer.vy = division(self.racer.vy * self.DRAG_FRACTION[0], self.DRAG_FRACTION[1])
 
         # velocity
         self.racer.vx += vx
@@ -182,7 +202,7 @@ class Simulation:
         racer was pushed out, otherwise returns False."""
         if isinstance(obj, Asteroid):
             # not colliding, nothing to be done
-            if distance_squared(self.racer.x, self.racer.y, obj.x, obj.y) > (self.racer.radius + obj.radius) ** 2:
+            if euclidean_distance(self.racer.x, self.racer.y, obj.x, obj.y) > (self.racer.radius + obj.radius):
                 return False
 
             # the vector to push the racer out by
@@ -194,8 +214,8 @@ class Simulation:
             push_by = distance - (self.racer.radius + obj.radius)
 
             # the actual push
-            self.racer.x -= (nx * push_by) // distance
-            self.racer.y -= (ny * push_by) // distance
+            self.racer.x -= division(nx * push_by, distance)
+            self.racer.y -= division(ny * push_by, distance)
 
             return True
 
@@ -227,7 +247,7 @@ class Simulation:
         new_goal_reached = False
 
         for i, goal in enumerate(self.goals):
-            if distance_squared(self.racer.x, self.racer.y, goal.x, goal.y) <= (self.racer.radius + goal.radius) ** 2:
+            if euclidean_distance(self.racer.x, self.racer.y, goal.x, goal.y) <= (self.racer.radius + goal.radius):
                 if not self.reached_goals[i]:
                     new_goal_reached = True
 
@@ -253,8 +273,8 @@ class Simulation:
                 break
 
         if collided:
-            self.racer.vx = self.racer.vx * self.COLLISION_FRACTION[0] // self.COLLISION_FRACTION[1]
-            self.racer.vy = self.racer.vy * self.COLLISION_FRACTION[0] // self.COLLISION_FRACTION[1]
+            self.racer.vx = division(self.racer.vx * self.COLLISION_FRACTION[0], self.COLLISION_FRACTION[1])
+            self.racer.vy = division(self.racer.vy * self.COLLISION_FRACTION[0], self.COLLISION_FRACTION[1])
 
         return collided
 
@@ -284,12 +304,16 @@ class Simulation:
         """Simulate a number of instructions for the simulation (from the start)."""
         self.restart()
 
+        results = []
+
         for instruction in instructions:
-            self.tick(instruction)
+            results.append(self.tick(instruction))
+
+        return results
 
     def save(self, path: str):
         """Save the simulation to a file:
-        | 0 0 5              // starting racer x/y/radius
+        | 0 0 5
         | -100 -100 100 100  // bounding box (min_x/min_y/max_x/max_y)
         | 5                  // number of asteroids
         | 10 -10 10          // asteroid 1 x/y/radius
@@ -399,3 +423,20 @@ def load_instructions(path: str) -> List[Instruction]:
             instructions.append(Instruction(*instruction_parts))
 
     return instructions
+
+
+if __name__ == "__main__":
+    map_path = "../../maps/test.txt"
+
+    simulation = Simulation.load(map_path)
+
+    tick_result = 0
+
+    print("Running simulation until collision...")
+
+    while tick_result & TickFlag.COLLIDED == 0:
+        tick_result = simulation.tick(Instruction(0, Instruction.MAX_ACCELERATION))
+
+        print(simulation.racer)
+
+    print("Bam!")

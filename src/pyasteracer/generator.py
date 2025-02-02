@@ -154,7 +154,8 @@ def get_preview(simulation: Simulation, size=1000):
             d.append(draw.Circle(circle.x / s, circle.y / s, circle.radius / s, fill=color, stroke=color))
 
     draw_circles(simulation.asteroids, "Black")
-    draw_circles(simulation.goals, "Red")
+    draw_circles([g for i, g in enumerate(simulation.goals) if simulation.reached_goals[i]], "LightGreen")
+    draw_circles([g for i, g in enumerate(simulation.goals) if not simulation.reached_goals[i]], "Red")
     draw_circles([simulation.racer], "Gray")
 
     return d

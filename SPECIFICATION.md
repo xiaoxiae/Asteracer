@@ -48,6 +48,7 @@ class BoundingBox:
     max_y: PosType
 ```
 
+
 ## Simulation
 Each tick of the simulation can be separated into the following three steps:
 
@@ -67,20 +68,25 @@ Given an instruction `(vx, vy)`, the racer is moved via the following rules:
 - add the instruction to the racer's velocity: `racer.velocity += (vx, vy)`
 - move the racer using its velocity: `racer.position += racer.velocity`
 
-An instruction is valid only if the length of the instruction is no greater than the maximal allowed acceleration (currently `127`). Note that the instruction length check must be done by comparing the squares of the instruction length and the maximal acceleration (i.e. `distance_squared(vx, vy) > 127 ** 2`), as this can be done exactly, unlike comparing euclidean length computed with `isqrt`.
+Note that the **division operator** works by **truncating the floating value of the number**.
+This especially means that Python's division doesn't work for negative numbers, as `-5 // 2 = -3`, which is, for our purposes, incorrect.
+One way to overcome this is to do `abs(x) // v * signum(x)`, which produces the correct result.
+
+An instruction is valid only if the **length of the instruction** (euclidean distance) is **no greater than `127`**.
+Note that the instruction length check must be done by comparing the squares of the instruction length and the maximal acceleration (i.e. `distance_squared(vx, vy) > 127 ** 2`), as this can be done exactly, unlike comparing euclidean length computed with `isqrt`.
 
 ### 2) Resolving collisions
 
 Collisions are resolved in `1` to `5` subticks.
 A subtick check collisions first with all asteroids, then with the bounding box.
-If any collision occurs during a subtick, execute another subtick, until the subtick limit is reached.
+If any collision occurs during a subtick, skip all other checks in the current subtick and immediately execute another subtick, until the subtick limit is reached.
 
 If any collision occurs in the tick as a whole, reduce the racer's velocity to half.
 This slowdown must occur at most once per tick, no matter how many collisions happened.
 
 #### Asteroids
 Iterate over all asteroids `asteroid` in the order they were added to the simulation and for each:
-- if `distance_squared(asteroid, racer) > (asteroid.radius + racer.radius) ** 2`, we're not colliding (continue to the next asteroid)
+- if `euclidean_distance(asteroid, racer) > (asteroid.radius + racer.radius)`, we're not colliding (continue to the next asteroid)
 - execute the following only upon collision:
     - let `distance = euclidean_distance(asteroid, racer)` (make sure to use _integer square root_)
     - get the vector to push the racer out by: `vn = racer.position - asteroid.position`
@@ -94,4 +100,4 @@ For each side of the box, if we're colliding (eg. if `racer.x - racer.radius < b
 Note that bounding box collisions can occur during a subtick independent of whether an asteroid collision occured.
 
 ### 3) Checking goals
-Iterate over all goals `goal`, marking them reached if `distance_squared(racer, goal) < (racer.radius + goal.radius) ** 2` (i.e. if we're intersecting it).
+Iterate over all goals `goal`, marking them reached if `euclidean_distance(racer, goal) < (racer.radius + goal.radius)` (i.e. if we're intersecting it).
