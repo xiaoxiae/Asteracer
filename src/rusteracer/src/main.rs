@@ -133,7 +133,6 @@ struct Simulation {
     bbox: BoundingBox,
 
     reached_goals: Vec<bool>,
-    pushed_states: Vec<(Racer, Vec<bool>)>,
 
     _grid: HashMap<(PosType, PosType), Vec<Asteroid>>,
     _cell_size: PosType,
@@ -150,7 +149,6 @@ impl Simulation {
             goals,
             bbox,
             reached_goals,
-            pushed_states: Vec::new(),
             _grid: HashMap::new(),
             _cell_size: CELL_SIZE,
         };
