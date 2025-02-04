@@ -92,7 +92,7 @@ impl Instruction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 struct BoundingBox {
     min_x: SizeType,
     min_y: SizeType,
