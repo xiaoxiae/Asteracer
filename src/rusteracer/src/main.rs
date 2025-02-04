@@ -1,10 +1,9 @@
-#![feature(random)]
+use rand::prelude::*;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::random::random;
 
 mod TickFlag {
     pub const Collided: usize = 1;
@@ -84,11 +83,11 @@ impl Instruction {
     }
 
     fn random() -> Self {
-        let bits: u128 = random();
+        let mut rng = rand::rng();
 
         Self {
-            vx: (bits & 0xFF) as InstType,
-            vy: ((bits.wrapping_shr(16)) & 0xFF) as InstType,
+            vx: rng.random::<InstType>(),
+            vy: rng.random::<InstType>(),
         }
     }
 }
