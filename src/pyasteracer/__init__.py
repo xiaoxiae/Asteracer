@@ -1,5 +1,4 @@
-"""
-The Asteracer game implementation. Includes the base movement code + couple of QOL additions (eg. save states)."""
+"""The Asteracer game implementation. Includes the base movement code + couple of QOL additions (eg. save states)."""
 from __future__ import annotations
 
 import dataclasses

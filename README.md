@@ -6,8 +6,6 @@ A TAS-focused space racing game.
 Compete for the fastest time to collect all checkpoints while avoiding the asteroids on a wide variety of maps.
 
 ## Getting started
-To play Asteracer interactively, you can do so [on this website](TODO) (TODO).
-
 For starting out with writing solves, see `src/pyasteracer/example.py`.
 
 ## Contents

@@ -1,7 +1,7 @@
 """A sample solution to the test map using Asteracer's default implementation."""
 from pyasteracer import *
 
-simulation = Simulation.load(f"../../maps/test.txt")
+simulation = Simulation.load(f"../maps/test.txt")
 
 print(f"Starting racer position: {simulation.racer.x} {simulation.racer.y}")
 print(f"Number of asteroids: {len(simulation.asteroids)}")
@@ -12,7 +12,7 @@ print()
 tick = 0
 print("Flying to the right...")
 while True:
-    result = simulation.tick(Instruction.right())
+    result = simulation.tick(Instruction(127, 0))
 
     if result & TickFlag.COLLIDED:
         print(f"We collided after {tick} ticks! Ouch...")
@@ -25,7 +25,7 @@ while True:
 # if we now fly down, there is a checkpoint that we can collect
 print("Flying down...")
 while True:
-    result = simulation.tick(Instruction.down())
+    result = simulation.tick(Instruction(0, 127))
 
     if result & TickFlag.GOAL_REACHED:
         print(f"We collected a checkpoint after {tick} ticks!")
