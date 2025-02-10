@@ -78,9 +78,11 @@ pub fn judge(
         ));
     }
 
+    let points = points(instructions.len(), task);
+
     Verdict::correct()
-        .override_points(points(instructions.len(), task))
-        .message(&format!("Úspěšný let!", ))
+        .override_points(points)
+        .message(&format!("Úspěšný let! Body: {}", points))
 }
 
 fn points(length: usize, task: Task) -> f64 {

@@ -1,97 +1,79 @@
+use std::cmp::Ordering;
 use std::path::PathBuf;
 
 use crate::simulation::*;
+use crate::solve;
 
 pub fn main() {
-    let mut simulation = Simulation::load(&PathBuf::from("../../maps/test.txt"));
+    let mut simulation = Simulation::load(&PathBuf::from("../../maps/sprint.txt"));
+
+    let (vertices, edges, vertex_objects) =
+        solve::load_asteroid_graph(&PathBuf::from("../../graphs/sprint.txt"))
+            .ok()
+            .unwrap();
+
+    let (distance, shortest_path) =
+        solve::shortest_path(&vertices, &edges, &vertex_objects).unwrap();
+
+    println!("Shortest path: {:?}", shortest_path);
 
     println!(
-        "Starting racer position: {} {}",
-        simulation.racer.x, simulation.racer.y
+        "{:?}",
+        solve::closest_distance_to_path(
+            &shortest_path,
+            &vertices,
+            (simulation.racer.x, simulation.racer.y)
+        )
     );
-    println!("Number of asteroids: {}", simulation.asteroids.len());
-    println!("Number of goals: {}", simulation.goals.len());
-    println!();
 
-    // Fly to the right until we hit the wall
-    let mut tick = 0;
-    println!("Flying to the right...");
-    loop {
-        let result = simulation.tick(Instruction::new(InstType::MAX, 0));
-        if (result & TickFlag::COLLIDED) != 0 {
-            println!("We collided after {} ticks! Ouch...", tick);
-            println!(
-                "Current racer position: {} {}",
-                simulation.racer.x, simulation.racer.y
-            );
-            println!();
-            break;
-        }
-        tick += 1;
-    }
+    let population_size = 10;
+    let generations = 1000;
+    let mutation_count = 10;
 
-    // Fly down to reach the first checkpoint
-    println!("Flying down...");
-    loop {
-        let result = simulation.tick(Instruction::new(0, InstType::MAX));
+    let mut population: Vec<solve::Individual> = (0..population_size)
+        .map(|_| solve::Individual::new(simulation.clone(), vec![]))
+        .collect();
 
-        println!("{:?}", Instruction::new(0, InstType::MAX));
+    let mut max_fitness: f64 = 0.0;
 
-        if (result & TickFlag::GOAL_REACHED) != 0 {
-            println!("We collected a checkpoint after {} ticks!", tick);
-            println!("Checkpoints obtained: {:?}", simulation.reached_goals);
-            println!(
-                "Current racer position: {} {}",
-                simulation.racer.x, simulation.racer.y
-            );
-            println!();
-            break;
-        }
-        tick += 1;
-    }
+    for i in 0..generations {
+        let mut new_population: Vec<solve::Individual> = Vec::new();
 
-    // Collect all goals by always flying to the nearest one
-    while simulation.reached_goals.iter().any(|&reached| !reached) {
-        let mut nearest_goal = None;
-        let mut nearest_goal_distance = PosType::MAX;
-
-        for (i, &reached) in simulation.reached_goals.iter().enumerate() {
-            if !reached {
-                let goal = simulation.goals[i];
-                let distance = euclidean_distance(goal.x, goal.y, simulation.racer.x, simulation.racer.y);
-
-                if distance < nearest_goal_distance {
-                    nearest_goal_distance = distance;
-                    nearest_goal = Some(goal);
-                }
+        // For each individual, mutate K times and add to the new population
+        for individual in &population {
+            for _ in 0..mutation_count {
+                let mut mutated_individual = individual.clone();
+                mutated_individual.mutate();
+                new_population.push(mutated_individual);
             }
         }
 
-        let nearest_goal = nearest_goal.unwrap();
-        println!("Flying to the nearest goal in a straight line...");
-        let mut collided_count = 0;
+        // Evaluate fitness for all individuals in the new population
+        for individual in &mut new_population {
+            individual.evaluate_fitness(&shortest_path, &vertices);
+        }
 
-        loop {
-            let instruction = Instruction::new(
-                nearest_goal.x - simulation.racer.x,
-                nearest_goal.y - simulation.racer.y,
-            );
+        // Combine original population with new mutated individuals
+        let mut combined_population = population.clone();
+        combined_population.append(&mut new_population);
 
-            let result = simulation.tick(instruction);
+        // Select the best individuals to form the next generation
+        solve::select_best(&mut combined_population, population_size);
 
-            if (result & TickFlag::COLLIDED) != 0 {
-                collided_count += 1;
+        // Update population to the best individuals
+        population = combined_population;
+
+        // Output the best individual
+        if let Some(best) = population
+            .iter()
+            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap_or(Ordering::Equal))
+        {
+            if best.fitness > max_fitness {
+                max_fitness = best.fitness;
+                println!("[{}] Better max fitness: {}", i, max_fitness);
+
+                Instruction::save(&PathBuf::from("../../best.txt"), &best.instructions)
             }
-
-            if (result & TickFlag::GOAL_REACHED) != 0 {
-                println!("We collected another checkpoint after {} ticks!", tick);
-                println!("Number of collisions on the way: {}", collided_count);
-                println!("Checkpoints obtained: {:?}", simulation.reached_goals);
-                println!();
-                break;
-            }
-            tick += 1;
         }
     }
-    println!("Race completed!");
 }

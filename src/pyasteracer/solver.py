@@ -174,84 +174,61 @@ def save_asteroid_graph(
         edges,
         asteroid_vertices,
         goal_vertices,
+        simulation,
 ):
-    """Save the asteroid graph to a file."""
+    point_to_vertex_mapping = {p: i for i, p in enumerate(vertices)}
+
     with open(path, "w") as f:
-        # f.write(f"# Generated with the following parameters:\n")
-        # f.write(f"# ----------------------------------------\n")
-
-        # for k, v in signature.parameters.items():
-        #    if v.default is inspect.Parameter.empty:
-        #        continue
-
-        #    f.write(f"# {k}: {v.default}\n")
-        # f.write(f"# ----------------------------------------\n\n")
-
-        f.write(f"{len(vertices)} {len(edges)}\n")
+        f.write(f"1 {len(asteroid_vertices)} {len(goal_vertices)} {len(edges)}\n")
 
         for vertex in vertices:
-            f.write(f"{vertex[0]} {vertex[1]}")
+            if vertex not in asteroid_vertices and vertex not in goal_vertices:
+                f.write(f"{vertex[0]} {vertex[1]}\n")
+                break
 
-            if vertex in asteroid_vertices:
-                f.write(f" A {asteroid_vertices[vertex].x} {asteroid_vertices[vertex].y}\n")
-            elif vertex in goal_vertices:
-                f.write(f" G {goal_vertices[vertex].x} {goal_vertices[vertex].y}\n")
-            else:
-                f.write(f" S\n")
+        for vertex, asteroid in asteroid_vertices.items():
+            f.write(f"{vertex[0]} {vertex[1]} {simulation.asteroids.index(asteroid)}\n")
 
-        for (x1, y1), (x2, y2) in edges:
-            f.write(f"{x1} {y1} {x2} {y2}\n")
+        for vertex, goal in goal_vertices.items():
+            f.write(f"{vertex[0]} {vertex[1]} {simulation.goals.index(goal)}\n")
+
+        for p1, p2 in edges:
+            f.write(f"{point_to_vertex_mapping[p1]} {point_to_vertex_mapping[p2]}\n")
 
 
 def load_asteroid_graph(path: str, simulation: Simulation):
     """Load the asteroid graph from a file."""
     with open(path) as f:
-        contents = [line for line in f.read().splitlines() if not line.startswith("#") and line.strip() != ""]
+        contents = [
+            line
+            for line in f.read().splitlines()
+            if not line.startswith("#") and line.strip() != ""
+        ]
 
-        n, m = list(map(int, contents[0].split()))
+        n_racer, n_asteroid, n_goal, m = list(map(int, contents[0].split()))
 
         vertices = []
         edges = []
+        vertex_objects = []
 
-        asteroid_vertices = {}
-        goal_vertices = {}
-
-        for i in range(1, 1 + n):
-            line = contents[i].split()
+        # Load vertices
+        for i in range(n_racer + n_asteroid + n_goal):
+            line = contents[i + 1].split()
 
             vertices.append((int(line[0]), int(line[1])))
 
-            if line[2] == "S":
-                continue
+            if 0 <= i < n_racer:
+                vertex_objects.append(("S", i))
+            elif n_racer <= i < n_asteroid:
+                vertex_objects.append(("A", int(line[2])))
+            elif n_asteroid <= i < n_goal:
+                vertex_objects.append(("G", int(line[2])))
 
-            obj_pos = (int(line[3]), int(line[4]))
+        # Load edges
+        for i in range(i, i + m):
+            edges.append((int(line[0]), int(line[1])))
 
-            if line[2] == "A":
-                for asteroid in simulation._grid[simulation._coordinate_to_grid(*obj_pos)]:
-                    if asteroid.x == obj_pos[0] and asteroid.y == obj_pos[1]:
-                        asteroid_vertices[vertices[-1]] = asteroid
-                        break
-                else:
-                    raise Exception(f"Unmatched asteroid vertex (line {i}).")
-            elif line[2] == "G":
-                for goal in simulation.goals:
-                    if goal.x == obj_pos[0] and goal.y == obj_pos[1]:
-                        goal_vertices[vertices[-1]] = goal
-                        break
-                else:
-                    raise Exception(f"Unmatched goal vertex (line {i}).")
-
-        for i in range(1 + n, 1 + n + m):
-            line = contents[i].split()
-
-            edges.append(
-                (
-                    (int(line[0]), int(line[1])),
-                    (int(line[2]), int(line[3])),
-                )
-            )
-
-    return vertices, edges, asteroid_vertices, goal_vertices
+    return vertices, edges, vertex_objects
 
 
 def get_graph_preview(
@@ -286,7 +263,9 @@ if __name__ == "__main__":
         print(f"Generating {task} graph... ", end="", flush=True)
         vertices, edges, asteroid_vertices, goal_vertices = get_asteroid_graph(simulation)
         print("saving... ", end="", flush=True)
-        save_asteroid_graph(f"../../graphs/{task}.txt", vertices, edges, asteroid_vertices, goal_vertices)
+        save_asteroid_graph(f"../../graphs/{task}.txt", vertices, edges, asteroid_vertices, goal_vertices, simulation)
+        print("checking loading... ", end="", flush=True)
+        graph = load_asteroid_graph(f"../../graphs/{task}.txt", simulation)
         print("generating preview... ", end="", flush=True)
         d = get_graph_preview(simulation, vertices, edges)
         d.save_svg(f"../../graphs/{task}.svg")

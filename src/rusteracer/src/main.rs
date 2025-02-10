@@ -1,7 +1,8 @@
 mod example;
-mod simulation;
-mod opendata;
 mod judge;
+mod opendata;
+mod simulation;
+mod solve;
 
 use crate::opendata::OpenData;
 use crate::simulation::*;
@@ -85,7 +86,6 @@ mod tests {
         }
     }
 
-    /// Test that the
     #[test]
     fn test_sample_solutions() {
         // a bit of a misuse since the states path doesn't exist, but works I guess
@@ -97,6 +97,25 @@ mod tests {
 
             simulation.simulate(&instructions);
 
+            let (vertices, edges, vertex_objects) =
+                solve::load_asteroid_graph(&PathBuf::from("../../graphs/sprint.txt"))
+                    .ok()
+                    .unwrap();
+
+            let (distance, shortest_path) =
+                solve::shortest_path(&vertices, &edges, &vertex_objects).unwrap();
+
+            println!("Shortest path: {:?}", shortest_path);
+
+            println!(
+                "{:?}",
+                solve::closest_distance_to_path(
+                    &shortest_path,
+                    &vertices,
+                    (simulation.racer.x, simulation.racer.y)
+                )
+            );
+
             assert!(simulation.finished());
         }
     }
@@ -105,5 +124,14 @@ mod tests {
     #[test]
     fn test_example_works() {
         example::main()
+    }
+
+    /// Test that we can load the asteroid graphs.
+    #[test]
+    fn test_loading_asteroid_graph() {
+        // total misuse since we're only looking for .txt files
+        for (path, _, _) in find_equal_states_cases("../../graphs/") {
+            solve::load_asteroid_graph(&path).ok();
+        }
     }
 }

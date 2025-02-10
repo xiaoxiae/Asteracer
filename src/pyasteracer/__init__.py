@@ -47,6 +47,9 @@ class Instruction:
         """Whatever values we get, normalize them."""
 
         if distance_squared(vx, vy) > Instruction.MAX_ACCELERATION ** 2:
+            vx = float(vx)
+            vy = float(vy)
+
             # use float to properly normalize here
             distance = (vx ** 2 + vy ** 2) ** (1/2)
 
@@ -102,12 +105,11 @@ class BoundingBox:
 
 def distance_squared(x1, y1, x2=0, y2=0) -> PosType:
     """Squared Euclidean distance between two points."""
-    return PosType((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return (PosType(x1) - PosType(x2)) ** 2 + (PosType(y1) - PosType(y2)) ** 2
 
 
 def euclidean_distance(x1, y1, x2=0, y2=0):
     """Integer Euclidean distance between two points. Uses integer square root."""
-    # TODO: provide custom and simple implementation of isqrt
     return PosType(isqrt(distance_squared(x1, y1, x2, y2)))
 
 
@@ -117,7 +119,7 @@ def signum(x):
 
 def division(a, b):
     """Correctly implemented division, removing the fractional component."""
-    return (abs(a) // b) * signum(a)
+    return (abs(int(a)) // int(b)) * signum(a)
 
 
 
@@ -180,8 +182,8 @@ class Simulation:
         self.racer.vy = division(self.racer.vy * self.DRAG_FRACTION[0], self.DRAG_FRACTION[1])
 
         # velocity
-        self.racer.vx += vx
-        self.racer.vy += vy
+        self.racer.vx += SpeedType(vx)
+        self.racer.vy += SpeedType(vy)
 
         # movement
         self.racer.x += self.racer.vx

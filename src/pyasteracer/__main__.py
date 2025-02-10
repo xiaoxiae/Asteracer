@@ -69,7 +69,8 @@ class Asteracer(QMainWindow):
 
         try:
             new_instructions = load_instructions(filename)
-        except:
+        except Exception as e:
+            print(e.stackTrace)
             # TODO: meaningful errors
             return
 
